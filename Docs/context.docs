@@ -1,0 +1,398 @@
+# Bible Reading Application Technical Documentation
+
+## Overview
+A modern, multi-lingual Bible reading application developed with Next.js, leveraging `API.Bible` (scripture.api.bible) for extensive translation support and `OpenRouter` for AI-powered features. The application provides a robust interface for Bible reading in English, French, Swahili, Lingala, and Shi, combined with intelligent verse suggestions and explanations.
+
+## Key Features
+
+### 1. Multi-Language Support
+-   Comprehensive support for 5 Bible translations:
+    -   English (World English Bible - WEB)
+    -   French (Bible J.N. Darby - LSG)
+    -   Swahili (Kiswahili Contemporary Version - SWA)
+    -   Lingala (Lingala Contemporary Bible - LIN)
+    -   Shi (Shi Bible - SHI)
+-   Dynamic UI language switching with localized book names and interface text.
+-   Seamless translation switching, preserving current reading position.
+
+### 2. Navigation and Reading
+-   Complete 66-book Protestant Bible structure, dynamically loaded based on translation.
+-   Accurate chapter counts for each book, derived from `BOOK_CHAPTERS` constant.
+-   Intuitive chapter navigation (previous/next buttons).
+-   Client-side position memory using `localStorage` for `book`, `chapter`, and `translation`.
+-   Configurable default starting position (Genesis 1:1).
+-   Persisted font size controls (range: 12px - 32px).
+
+### 3. User Interface
+-   Modern, responsive design built with TailwindCSS and Shadcn UI.
+-   Fluid transitions and animations powered by Framer Motion.
+-   Enhanced readability with backdrop blur effects.
+-   Custom scrollbar styling for improved UX.
+-   Robust loading states and user-friendly error handling.
+-   Adaptive layout optimized for diverse screen sizes (mobile to desktop).
+
+### 4. Mobile-First Experience
+-   **Full-Screen Mobile Bible Reader**: Immersive reading experience with glass morphism design
+    -   Fixed full-screen positioning with nebula background
+    -   Glass-transparent content cards with dark overlay (`bg-black/30 dark:bg-black/40`)
+    -   Floating navigation pills with home button integration
+    -   Responsive typography scaling and touch-friendly controls
+    -   Hidden scrollbars for clean appearance
+    -   Comprehensive responsive breakpoints (`xs:`, `sm:`, `md:`)
+-   **TikTok-Style Shorts Page**: Social media inspired Bible content discovery
+    -   Full-screen video-style interface on mobile
+    -   Grid-based layout on desktop
+    -   Smooth Framer Motion animations with staggered loading
+    -   Responsive component architecture separating mobile/desktop views
+    -   Integration with main app navigation and theming
+
+### 5. Bible Content Integration (`API.Bible`)
+-   Primary integration with `API.Bible` (scripture.api.bible) for rich, structured content.
+-   Support for diverse content types (HTML, plain text) from the API.
+-   Sophisticated HTML parsing strategies (`parseApiBibleContent`) for accurate verse extraction and formatting.
+-   Identification of individual verses via `data-number`, `data-sid`, and `class="v"` HTML attributes.
+-   Includes robust error handling and a multi-level fallback system (including an old `bible-api.com` integration as a tertiary fallback).
+-   Efficient verse deduplication and text cleaning to prevent fragmentation and redundant verse numbers.
+
+### 6. AI-Powered Features (OpenRouter)
+-   **Verse Suggestions**: Utilizes `OpenRouter AI` with the `mistralai/mistral-7b-instruct:free` model to provide relevant Bible verse suggestions based on natural language queries.
+    -   AI generates structured JSON containing verse references (e.g., `{"verses": ["John 3:16"]}`).
+    -   Verse texts are retrieved from a static, in-memory `KJV_DATA` object for rapid lookup.
+    -   Employs highly specific prompt engineering for accurate and context-aware verse recommendations, adhering to canonical book names and precise formatting (`Book Chapter:Verse`).
+-   **Verse Explanations**: Provides AI-generated explanations for selected verses, offering theological insights and practical application.
+-   Includes robust error handling and fallback suggestions for AI service failures.
+
+## Technical Implementation
+
+### Core Components
+
+1.  **`BibleReader` Component (`src/components/bible-reader.tsx`)**
+    -   **Role**: Responsive wrapper component that switches between mobile and desktop views
+    -   **Functionality**: Uses responsive breakpoints to show `BibleReaderMobile` on `md:hidden` and `BibleReaderDesktop` on `hidden md:block`
+    -   **Dependencies**: Integrates both mobile and desktop Bible reading experiences
+
+2.  **`BibleReaderMobile` Component (`src/components/bible-reader-mobile.tsx`)**
+    -   **Role**: Full-screen mobile Bible reading experience with modern glass morphism design
+    -   **Key Features**:
+        -   Fixed full-screen positioning (`fixed inset-0 z-50`)
+        -   Nebula background with light/dark variants
+        -   Floating navigation pills with home button (`Home icon | Book Chapter | Translation`)
+        -   Glass-transparent content cards with dark overlay
+        -   Collapsible settings panel with font size, book, and translation controls
+        -   Floating bottom navigation for chapter navigation
+        -   Comprehensive responsive design with progressive typography scaling
+        -   Hidden scrollbars and smooth animations
+    -   **Navigation**: Integrated home button in title pill, floating chapter navigation at bottom
+    -   **Styling**: Glass morphism with `backdrop-blur-xl`, rounded corners, and white/black overlays
+
+3.  **`BibleReaderDesktop` Component (`src/components/bible-reader-desktop.tsx`)**
+    -   **Role**: Traditional desktop Bible reading interface
+    -   **Functionality**: Standard layout with sidebar navigation and main content area
+
+4.  **Shorts Components**
+    -   **`Shorts` (`src/app/shorts/page.tsx`)**: Main Shorts page with responsive wrapper
+    -   **`ShortsMobile` (`src/components/shorts-mobile.tsx`)**: TikTok-style full-screen mobile experience
+    -   **`ShortsDesktop` (`src/components/shorts-desktop.tsx`)**: Grid-based desktop layout
+    -   **Features**: Smooth animations, back navigation, responsive design, integration with app theming
+
+5.  **`BibleService` (`src/lib/bible-service.ts`)**
+    -   **Role**: Centralized service layer for all Bible-related data operations.
+    -   **Functionality**: Acts as an abstraction over various Bible APIs. Contains methods for `getChapter` (with `API.Bible` as primary and `bible-api.com` as fallback), `getVersesByAI`, and `explainVerse`. Handles HTML parsing of `API.Bible` content (`parseApiBibleContent`).
+    -   **Dependencies**: Depends on `ApiBibleService` for new API interactions, `BibleConstants` for mappings, and `OpenRouterClient` for AI communication.
+
+6.  **`ApiBibleService` (`src/lib/api-bible-service.ts`)**
+    -   **Role**: Direct integration layer for the `API.Bible` REST API.
+    -   **Functionality**: Responsible for making HTTP requests to `scripture.api.bible` endpoints (`/bibles`, `/books`, `/chapters`, `/verses`). Handles API key authentication and response parsing.
+    -   **Dependencies**: Core `fetch` API.
+
+7.  **`BibleConstants` (`src/lib/bible-constants.ts`)**
+    -   **Role**: Centralized repository for static Bible-related data and mappings.
+    -   **Functionality**: Defines `BibleBook` and `BibleTranslation` types, `TRANSLATIONS` object (mapping internal IDs to `API.Bible` IDs and language names), `BOOK_ID_MAPPING` (English book names to `API.Bible` book IDs), `BIBLE_STRUCTURE` (Old/New Testament categorization), and localized book name mappings (`FRENCH_BOOK_NAMES`, `SWAHILI_BOOK_NAMES`, `LINGALA_BOOK_NAMES`, `SHI_BOOK_NAMES`). Provides `getLocalizedBookName` helper.
+
+### Mobile UI Architecture
+
+#### Glass Morphism Design System
+-   **Background**: Nebula backgrounds with light (`/Whitegrey.png`) and dark (`/Darkwall.png`) variants
+-   **Glass Effects**: 
+    -   Content cards: `bg-black/30 dark:bg-black/40 backdrop-blur-xl`
+    -   Navigation pills: `bg-white/80 dark:bg-neutral-800/60 backdrop-blur-lg`
+    -   Buttons: `bg-white/10 hover:bg-white/20 backdrop-blur-sm`
+-   **Borders**: Subtle white borders (`border-white/20 dark:border-white/10`)
+-   **Shadows**: Deep shadows (`shadow-2xl`) for floating effects
+-   **Rounded Corners**: Extensive use of `rounded-3xl`, `rounded-2xl`, `rounded-full`
+
+#### Responsive Breakpoints
+-   **xs**: Extra small screens (custom breakpoint)
+-   **sm**: Small screens (640px+) - Enhanced spacing and typography
+-   **md**: Medium screens (768px+) - Switch to desktop layout
+-   **Progressive Scaling**: Font sizes, padding, and spacing scale appropriately
+
+#### Navigation Structure
+1.  **Title Pill**: Central floating pill with home button, book/chapter info, settings trigger
+2.  **Settings Panel**: Collapsible panel with font size, book selection, translation controls
+3.  **Bottom Navigation**: Floating chapter navigation (Previous/Next) with chapter progress
+4.  **Home Integration**: Home icon in title pill for quick navigation
+
+### Data Structures
+
+1.  **`BibleBook` and `BibleTranslation` Types**
+    ```typescript
+    export type BibleBook = keyof typeof BOOK_CHAPTERS;
+    export type BibleTranslation = 'web' | 'lsg' | 'swa' | 'lin' | 'shi';
+    ```
+
+2.  **`TRANSLATIONS` Object**
+    ```typescript
+    export const TRANSLATIONS = {
+      'web': {
+        id: 'web',
+        name: 'World English Bible',
+        language: 'English',
+        apiBibleId: '9879dbb7cfe39e4d-01'
+      },
+      'lsg': {
+        id: 'lsg',
+        name: 'Bible J.N. Darby (French)',
+        language: 'French',
+        apiBibleId: 'a93a92589195411f-01'
+      },
+      // ... (swa, lin, shi similar structure)
+    } as const;
+    ```
+
+3.  **`BOOK_ID_MAPPING`**
+    ```typescript
+    export const BOOK_ID_MAPPING: Record<BibleBook, string> = {
+      'Genesis': 'GEN',
+      'Exodus': 'EXO',
+      // ... (all 66 books mapping to API.Bible IDs)
+    };
+    ```
+
+4.  **`BibleVerse` Interface**
+    ```typescript
+    export interface BibleVerse {
+      verse: number; // The verse number (e.g., 1, 2, 3)
+      text: string;  // The actual text content of the verse
+      // Note: Data-sid is handled internally during parsing for identification
+    }
+    ```
+
+5.  **`AIVerseResponse` Interface**
+    ```typescript
+    export interface AIVerseResponse {
+      verses: string[]; // Array of Bible references (e.g., ["John 3:16", "Romans 8:28"])
+    }
+    ```
+
+### State Management
+-   **Client-Side State**: React `useState` and `useEffect` hooks manage UI state, including selected book, chapter, translation, loading indicators, and font size.
+-   **Local Storage Persistence**: Utilizes `localStorage` to persist the user's last reading position (`book`, `chapter`, `translation`) and font size preferences across sessions.
+-   **Mobile-Specific State**: Settings panel visibility, dropdown states, responsive positioning calculations
+
+### API Integration
+
+1.  **`API.Bible` (Primary)**
+    -   **Base URL**: `https://api.scripture.api.bible/v1`
+    -   **Authentication**: Requires `api-key` header (managed via `NEXT_PUBLIC_API_BIBLE_KEY`).
+    -   **Key Endpoints**:
+        -   `/bibles/{bibleId}/chapters/{chapterId}`: Retrieves full HTML content for a specific chapter, supporting `content-type` options (`html`, `text`).
+        -   `/bibles/{bibleId}/verses/{verseId}`: (Potentially used for future specific verse lookups, currently chapter content is parsed).
+    -   **Content Options**: Requests `html` content with `include-verse-numbers=true` and `include-verse-spans=true` for rich parsing.
+
+2.  **`bible-api.com` (Tertiary Fallback)**
+    -   **Base URL**: `https://bible-api.com`
+    -   **Endpoints**:
+        -   `/{book}+{chapter}?translation={translation}`: Fetches chapter content.
+        -   `/{reference}`: Fetches individual verse.
+    -   **Usage**: Only used as a fallback if `API.Bible` requests fail or return empty content.
+
+3.  **`OpenRouter` AI (for Verse Suggestions and Explanations)**
+    -   **Model**: `mistralai/mistral-7b-instruct:free` (configured via `NEXT_PUBLIC_OPENROUTER_MODEL`).
+    -   **Authentication**: Requires `Authorization` header with `Bearer NEXT_PUBLIC_OPENROUTER_API_KEY`.
+    -   **Structured Generation**: The `createOpenRouterClient` utility (from `src/ai/openrouter.ts`) is configured to generate structured JSON responses based on predefined Zod schemas, ensuring reliable data extraction.
+    -   **Prompt Engineering**: Employs detailed system prompts (`ai-verse-selection.ts`, `ai-explanation-modal.ts`) to guide the AI in generating contextually accurate, spiritually relevant, and correctly formatted Bible references and explanations.
+
+## Error Handling & Fallbacks
+
+### Multi-Level Fallback System
+The application implements a robust error handling strategy to ensure a resilient user experience:
+1.  **Primary**: Attempt to fetch and parse content from `API.Bible`.
+2.  **Secondary**: If initial `API.Bible` parsing yields no verses or fragmented content, alternative parsing strategies are attempted within `parseApiBibleContent`.
+3.  **Tertiary**: If `API.Bible` requests fail (e.g., network error, invalid ID) or return empty content, the system gracefully falls back to fetching from the old `bible-api.com`.
+4.  **Final**: If all API calls fail, a user-friendly error message is displayed in the UI.
+
+### Specific Error Scenarios Addressed:
+-   **401 Unauthorized / API Key Issues**: Handled by verifying API keys and falling back.
+-   **Verse Number Duplication**: Addressed by the `deduplication & consolidation` logic in parsing.
+-   **Fragmented/Missing Verses**: Mitigated by multi-strategy HTML parsing.
+-   **Invalid Verse References from AI**: `parseVerseReference` validates formats and handles non-existent book/chapter/verse data during `KJV_DATA` lookup.
+-   **AI Service Failures**: `try-catch` blocks with console logging and user-facing error messages/default fallbacks.
+-   **Local Storage Issues**: Robust `try-catch` blocks around `localStorage` operations.
+-   **Mobile Responsive Issues**: Comprehensive breakpoint handling and fallback layouts
+
+## Performance Considerations
+
+-   **API Request Optimization**: Strategic use of `API.Bible` for comprehensive chapter content rather than individual verse requests.
+-   **In-Memory Verse Lookup**: Leveraging `KJV_DATA` for AI-suggested verses ensures near-instantaneous text retrieval, minimizing latency.
+-   **Mobile Optimizations**: 
+    -   Hidden scrollbars for performance (`scrollbarWidth: 'none'`)
+    -   Efficient responsive calculations with `useEffect` hooks
+    -   Optimized animation delays and staggering
+    -   Progressive image loading for backgrounds
+-   **Caching Strategy**: While not fully implemented, opportunities exist for client-side caching of API responses (e.g., using `IndexedDB` or a more sophisticated state management library) to reduce network load and improve responsiveness for frequently accessed chapters/translations.
+-   **Font Size Debouncing**: Prevents excessive re-renders during font size adjustments.
+-   **Lazy Loading**: Chapters are loaded on demand, optimizing initial page load.
+
+## Dependencies
+
+-   **Next.js**: React framework with App Router architecture
+-   **React**: Frontend library for building user interfaces
+-   **Framer Motion**: Production-ready animations and transitions
+-   **TailwindCSS**: Utility-first CSS framework with custom responsive breakpoints
+-   **Shadcn UI**: Reusable UI components built with TailwindCSS
+-   **Lucide Icons**: Open-source icon library (Home, ChevronLeft, ChevronRight, etc.)
+-   **OpenRouter AI**: Unified API for various AI models
+-   **`API.Bible`**: Primary Bible content API
+-   **`bible-api.com`**: Legacy Bible content API (for fallback)
+-   **Zod**: TypeScript-first schema declaration and validation library
+
+## Deployment
+
+### Environment Setup
+1.  Ensure all required environment variables (`NEXT_PUBLIC_API_BIBLE_KEY`, `NEXT_PUBLIC_OPENROUTER_API_KEY`, `NEXT_PUBLIC_OPENROUTER_MODEL`, `NEXT_PUBLIC_SITE_URL`) are correctly configured in `.env.local` for development and production environments.
+2.  Verify API keys have the necessary permissions.
+3.  Configure CORS policies if deploying to a different domain.
+4.  Ensure background images (`/Whitegrey.png`, `/Darkwall.png`) are properly served from the public directory.
+
+### Build and Run
+```bash
+# Install dependencies
+npm install
+
+# Run in development mode (e.g., on port 9003)
+npm run dev -- --port 9003
+
+# Build for production
+npm run build
+
+# Start production server
+npm start
+```
+
+### Production Considerations
+-   Use secure production API keys.
+-   Implement comprehensive error logging and monitoring.
+-   Consider using a Content Delivery Network (CDN) for static assets and background images.
+-   Apply appropriate security headers and best practices.
+-   Optimize images for mobile performance.
+
+## Troubleshooting
+
+### Common Problems
+
+1.  **Application Fails to Start**:
+    -   Check for port conflicts (try a different port with `--port`).
+    -   Ensure `npm install` completed successfully.
+    -   Verify Node.js version compatibility.
+2.  **API Errors (401, 404, Network Issues)**:
+    -   Double-check `NEXT_PUBLIC_API_BIBLE_KEY` and `NEXT_PUBLIC_OPENROUTER_API_KEY` for correctness (no extra spaces, invalid characters).
+    -   Verify network connectivity.
+    -   Confirm Bible IDs or chapter IDs are accurate according to `API.Bible` documentation.
+3.  **Verse Parsing Issues (Fragmented/Missing Text)**:
+    -   Inspect raw API.Bible HTML response content.
+    -   Review `parseApiBibleContent` logic in `src/lib/bible-service.ts` for regex or DOM manipulation errors.
+    -   Test with different chapters/translations to isolate the issue.
+4.  **Missing Translations/Incorrect Book Names**:
+    -   Verify entries in `TRANSLATIONS` and `BOOK_ID_MAPPING` in `src/lib/bible-constants.ts`.
+    -   Ensure localized book name maps (`FRENCH_BOOK_NAMES`, etc.) are complete and correctly used by `getLocalizedBookName`.
+5.  **AI Feature Malfunctions**:
+    -   Check `NEXT_PUBLIC_OPENROUTER_API_KEY`.
+    -   Review AI prompt in `ai-verse-selection.ts` for any accidental formatting changes.
+    -   Inspect AI raw response for unexpected output that might break JSON parsing.
+6.  **Mobile Layout Issues**:
+    -   Verify responsive breakpoints are working correctly
+    -   Check that background images are loading properly
+    -   Ensure glass morphism effects are rendering with proper backdrop support
+    -   Test on various mobile devices and screen sizes
+
+## Recent Updates (Latest Session)
+
+### Mobile Bible Reader Enhancements
+1.  **Full-Screen Implementation**: Converted mobile reader to true full-screen experience (`fixed inset-0 z-50`)
+2.  **Glass Morphism Design**: Implemented comprehensive glass effects with dark overlays and backdrop blur
+3.  **Navigation Improvements**: 
+    -   Added home button to title pill (Home icon | Book Chapter | Translation)
+    -   Removed redundant back button
+    -   Implemented floating bottom navigation for chapter navigation
+4.  **Responsive Optimizations**: Enhanced breakpoint usage and progressive scaling
+5.  **Content Spacing**: Added proper bottom padding (`pb-24 sm:pb-28`) to accommodate floating navigation
+
+### Shorts Feature Implementation
+1.  **TikTok-Style Interface**: Created full-screen mobile experience with video-style layout
+2.  **Responsive Architecture**: Separated mobile and desktop components with responsive wrapper
+3.  **Animation System**: Implemented smooth Framer Motion transitions and staggered loading
+4.  **Navigation Integration**: Connected with main app navigation and theming system
+
+### Component Architecture Updates
+1.  **Responsive Bible Reader**: Created wrapper component that switches between mobile/desktop views
+2.  **Component Separation**: Organized mobile and desktop experiences into separate, focused components
+3.  **Consistent Theming**: Maintained design consistency across all new components
+
+## Future Enhancements
+
+### Planned Features
+-   **Verse Highlighting & Annotation**: Allow users to highlight verses and add personal notes.
+-   **Reading Plans**: Guided reading journeys.
+-   **Audio Bible Integration**: Incorporate audio playback for verses/chapters.
+-   **Offline Reading**: Enable access to downloaded Bible content without internet.
+-   **User Accounts & Sync**: Personalize experience and sync data across devices.
+-   **Advanced Search Functionality**: Full-text search across all loaded translations.
+-   **Cross-References**: Display related verses.
+-   **Study Tools**: Dictionaries, concordances, commentaries.
+-   **Enhanced Shorts**: Video content, social features, sharing capabilities.
+
+### Technical Improvements
+-   **Comprehensive Unit Tests**: Expand test coverage for core logic and mobile components.
+-   **TypeScript Strict Mode**: Enable stricter type checking for enhanced code quality.
+-   **Performance Monitoring**: Integrate tools for real-time performance analytics.
+-   **PWA Features**: Add service worker for offline functionality and app-like experience.
+-   **Advanced Caching**: Implement sophisticated caching strategies for mobile performance.
+
+## Contributing
+
+### Code Style
+-   Adhere to TypeScript best practices for type safety and clarity.
+-   Follow existing naming conventions and project structure.
+-   Document public methods with JSDoc comments.
+-   Ensure backward compatibility where applicable.
+-   Maintain responsive design principles for all new components.
+
+### Adding New Translations
+1.  Use the provided discovery script to find the `API.Bible` ID for the desired translation.
+2.  Add the new translation entry to the `TRANSLATIONS` object and update the `BibleTranslation` type in `src/lib/bible-constants.ts`.
+3.  If the translation uses different book names, create a new localized book name mapping (e.g., `GERMAN_BOOK_NAMES`) and update the `getLocalizedBookName` helper function accordingly.
+4.  Update the UI dropdown in both mobile and desktop Bible readers to include the new translation option.
+5.  Thoroughly test with sample chapters (Genesis 1, John 3, Psalm 23, etc.) to verify correct verse parsing and display.
+6.  Check for proper display of special characters and diacritics.
+7.  Test responsive behavior on mobile devices.
+
+### Reporting Issues
+-   Provide detailed information including browser/environment (OS, Node.js version, browser type, device type).
+-   Include clear steps to reproduce the issue.
+-   Attach relevant error messages, console logs, or network request/response details.
+-   Specify which translation and Bible reference were used when the issue occurred.
+-   For mobile issues, include device specifications and screen size.
+
+---
+
+## Quick Start Summary
+
+1.  **Get API Keys**: Obtain keys for `API.Bible` and `OpenRouter`.
+2.  **Set Environment**: Configure keys in `.env.local`.
+3.  **Install**: Run `npm install`.
+4.  **Run**: Execute `npm run dev -- --port 9003`.
+5.  **Test**: Access `http://localhost:9003` in your browser.
+6.  **Mobile Testing**: Test responsive behavior on mobile devices or browser dev tools.
+
+The system now features a comprehensive mobile-first experience with glass morphism design, TikTok-style Shorts functionality, and robust responsive architecture alongside the existing multi-language Bible support and AI-powered features! 

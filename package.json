@@ -1,0 +1,23 @@
+{
+  "name": "bible-app-workspace",
+  "version": "1.0.0",
+  "description": "Bible app with Holy Shorts - TikTok-style spiritual content",
+  "private": true,
+  "scripts": {
+    "dev": "cd bible && npm run dev",
+    "build": "cd bible && npm run build",
+    "start": "cd bible && npm run start",
+    "lint": "cd bible && npm run lint",
+    "typecheck": "cd bible && npm run typecheck",
+    "install-deps": "cd bible && npm install"
+  },
+  "keywords": [
+    "bible",
+    "spiritual",
+    "shorts",
+    "nextjs",
+    "react"
+  ],
+  "author": "Your Name",
+  "license": "MIT"
+}

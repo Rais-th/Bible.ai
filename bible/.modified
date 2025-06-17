@@ -1,0 +1,36 @@
+🎨 Floating Pills Design Description
+Visual Style:
+"Create floating pill-shaped UI elements with a glass-morphism effect. Each pill should have:
+Semi-transparent background (80% opacity white/dark)
+Backdrop blur filter for frosted glass appearance
+Subtle border with low opacity
+Rounded-full shape (fully rounded corners)
+Drop shadow for floating elevation effect"
+Technical Implementation:
+"Use these CSS classes for the glass-morphism pills:
+bg-white/80 dark:bg-neutral-800/60 (semi-transparent background)
+backdrop-blur-lg (frosted glass blur effect)
+border border-slate-300/70 dark:border-neutral-700/50 (subtle borders)
+rounded-full (pill shape)
+shadow-xl (floating shadow)
+px-4 py-2 (internal padding)"
+Layout Pattern:
+"Position floating pills using absolute positioning without container backgrounds:
+Left pill: absolute top-14 left-4
+Center pill: absolute top-14 left-1/2 transform -translate-x-1/2
+Right pill: absolute top-14 right-4
+All pills at same vertical level with consistent spacing"
+Interactive States:
+"Add hover effects with:
+hover:bg-white/90 dark:hover:bg-neutral-800/80 (slight opacity increase)
+transition-all duration-200 (smooth transitions)
+Scale animations: whileHover={{ scale: 1.1 }} and whileTap={{ scale: 0.95 }}"
+Design Keywords:
+Glass-morphism / Glassmorphism
+Floating UI elements
+Semi-transparent pills
+Backdrop blur effects
+Elevated design system
+iOS-style floating buttons
+Frosted glass aesthetic
+This description captures the modern, premium floating glass design! 🚀
